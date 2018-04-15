@@ -39,41 +39,40 @@ PyObject* sieve_cfunc (PyObject *dummy, PyObject *args){
 	value_type i;
 	int thread_args_data[NUMBER_OF_THREADS];
 	if (!PyArg_ParseTuple(args, "K",&max_number)) return NULL;
-		if(current_max==0||max_number>current_max){
-			current_max=max_number;
-			if(sieve_check){
-				PyMem_RawFree(sieve_data);
-				sieve_check=0;
-			}
-			sieve_data=PyMem_RawMalloc(max_number+1);
-			if(sieve_data!=NULL){
-				memset(sieve_data,1,max_number+1);
-				sieve_check=1;
-			}else{
-				return NULL;
-			}
-			if(max_number>=0)sieve_data[0]=0;
-			if(max_number>=1)sieve_data[1]=0;
-			sqrt_max=sqrt(max_number);
-			for(i=4;i<=max_number;i+=2){
-				sieve_data[i]=0;
-			}
+	if(current_max==0||max_number>current_max){
+		current_max=max_number;
+		if(sieve_check){
+			PyMem_RawFree(sieve_data);
+			sieve_check=0;
+		}
+		sieve_data=PyMem_RawMalloc(max_number+1);
+		if(sieve_data!=NULL){
+			memset(sieve_data,1,max_number+1);
+			sieve_check=1;
+		}else{
+			return NULL;
+		}
+		if(max_number>=0)sieve_data[0]=0;
+		if(max_number>=1)sieve_data[1]=0;
+		sqrt_max=sqrt(max_number);
+		for(i=4;i<=max_number;i+=2){
+			sieve_data[i]=0;
+		}
+		
+		
+		PyEval_InitThreads();
+		number_of_threads=NUMBER_OF_THREADS<max_number+1?NUMBER_OF_THREADS:max_number+1;
+		
+		pthread_t threads[NUMBER_OF_THREADS];
+		
+		for(i=0;i<number_of_threads;++i){
+			thread_args_data[i]=i;
+			pthread_create(&threads[i], NULL, sieve_worker_thread, &thread_args_data[i]);
+		}
+		for(i=0;i<number_of_threads;++i){
+			pthread_join(threads[i],NULL);
 			
-			
-			PyEval_InitThreads();
-			number_of_threads=NUMBER_OF_THREADS<max_number+1?NUMBER_OF_THREADS:max_number+1;
-			
-			pthread_t threads[NUMBER_OF_THREADS];
-			
-			for(i=0;i<number_of_threads;++i){
-				thread_args_data[i]=i;
-				pthread_create(&threads[i], NULL, sieve_worker_thread, &thread_args_data[i]);
-			}
-			for(i=0;i<number_of_threads;++i){
-				pthread_join(threads[i],NULL);
-				
-			}
-			
+		}
 	}
 	
     npy_intp dims[1] = {max_number+1};
