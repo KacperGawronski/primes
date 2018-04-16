@@ -6,5 +6,7 @@ Prime numbers uitls for Python written in C, require NumPy, Python3+ and POSIX t
 To install:
 (python interpreter as root) setup.py install,
 
+
 for example:
+
 python3.6 setup.py install
